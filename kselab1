@@ -1,0 +1,52 @@
+from machine import Pin
+from time import sleep
+
+IN1 = Pin(22,Pin.OUT)
+IN2 = Pin(23,Pin.OUT)
+IN3 = Pin(21,Pin.OUT)
+IN4 = Pin(19,Pin.OUT)
+
+pins = [IN1, IN2, IN3, IN4]
+
+sequence = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
+sequencereverse = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]]
+
+sequenceslow = [[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,1,1],[0,0,0,1],[1,0,0,1]]
+sequencereverseslow = [[0,0,0,1],[0,0,1,1],[0,0,1,0],[0,1,1,0],[0,1,0,0],[1,1,0,0],[1,0,0,0],[1,0,0,1]]
+
+reverse = Pin(18,Pin.IN)
+slow = Pin(34,Pin.IN)
+
+ts = 0.001
+
+
+
+steps=0
+
+while True:
+    if reverse.value() == 0 and slow.value() == 0:
+        for step in sequence:
+            for i in range(len(pins)):
+                pins[i].value(step[i])
+                sleep(ts)
+                #print('sq')
+    if reverse.value() == 0 and slow.value() == 1:
+        for step in sequenceslow:
+            for i in range(len(pins)):
+                pins[i].value(step[i])
+                sleep(ts)
+                #print('sqs')
+    if reverse.value() == 1 and slow.value() == 0:
+        for step in sequencereverse:
+            for i in range(len(pins)):
+                pins[i].value(step[i])
+                sleep(ts)
+                #print('sqr')
+    if reverse.value() == 1 and slow.value() == 1:
+        for step in sequencereverseslow:
+            for i in range(len(pins)):
+                pins[i].value(step[i])
+                sleep(ts)
+                #print('sqrs')
+
+
