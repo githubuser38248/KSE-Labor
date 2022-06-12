@@ -1,5 +1,9 @@
-from machine import Pin
+from machine import Pin, ADC
 from time import sleep
+
+
+turn = ADC(Pin(32))
+turn.atten(ADC.ATTN_11DB)       #Full range: 3.3v
 
 IN1 = Pin(22,Pin.OUT)
 IN2 = Pin(23,Pin.OUT)
@@ -16,37 +20,41 @@ sequencereverseslow = [[0,0,0,1],[0,0,1,1],[0,0,1,0],[0,1,1,0],[0,1,0,0],[1,1,0,
 
 reverse = Pin(18,Pin.IN)
 slow = Pin(34,Pin.IN)
+on = Pin(35,Pin.IN)
+
 
 ts = 0.001
 
-
-
-steps=0
+def read():
+    turn_value = turn.read()
+    sleep_value = ts * ((turn_value/4095)*9+1)
+    return sleep_value
+    
 
 while True:
-    if reverse.value() == 0 and slow.value() == 0:
+    if reverse.value() == 0 and slow.value() == 0 and on.value() == 1:
         for step in sequence:
             for i in range(len(pins)):
                 pins[i].value(step[i])
-                sleep(ts)
-                #print('sq')
-    if reverse.value() == 0 and slow.value() == 1:
+                sleep(read())
+    if reverse.value() == 0 and slow.value() == 1 and on.value() == 1:
         for step in sequenceslow:
             for i in range(len(pins)):
                 pins[i].value(step[i])
-                sleep(ts)
-                #print('sqs')
-    if reverse.value() == 1 and slow.value() == 0:
+                sleep(read())
+    if reverse.value() == 1 and slow.value() == 0 and on.value() == 1:
         for step in sequencereverse:
             for i in range(len(pins)):
                 pins[i].value(step[i])
-                sleep(ts)
-                #print('sqr')
-    if reverse.value() == 1 and slow.value() == 1:
+                sleep(read())
+    if reverse.value() == 1 and slow.value() == 1 and on.value() == 1:
         for step in sequencereverseslow:
             for i in range(len(pins)):
                 pins[i].value(step[i])
-                sleep(ts)
-                #print('sqrs')
+                sleep(read())
+    if on.value() == 0:
+        sleep(ts)
+
+        
 
 
