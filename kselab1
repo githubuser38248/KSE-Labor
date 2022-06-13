@@ -1,58 +1,67 @@
-from machine import Pin, ADC
-from time import sleep
+#Import der gebrauchten Module
+from machine import Pin, ADC   # Import Pins, Import Analog Digital Converter
+from time import sleep         # Import time
 
+#Definition von dem analogen Eingang zur Messung des Potentiometer
+turn = ADC(Pin(32))            # Analog Input  
+turn.atten(ADC.ATTN_11DB)      # Full range: 3.3v
 
-turn = ADC(Pin(32))
-turn.atten(ADC.ATTN_11DB)       #Full range: 3.3v
-
-IN1 = Pin(22,Pin.OUT)
+#Definition der digitalen Ausgänge zur Steuerung des Motors
+IN1 = Pin(22,Pin.OUT)          # Digital Outputs Motor Driver
 IN2 = Pin(23,Pin.OUT)
 IN3 = Pin(21,Pin.OUT)
 IN4 = Pin(19,Pin.OUT)
 
 pins = [IN1, IN2, IN3, IN4]
 
-sequence = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-sequencereverse = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]]
+#Definition der Sequenzen der Motorsteuerung
+sequence = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]  # Motor Sequence
+sequencereverse = [[0,0,0,1],[0,0,1,0],[0,1,0,0],[1,0,0,0]] # Motor Sequence reverse
 
-sequenceslow = [[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,1,1],[0,0,0,1],[1,0,0,1]]
-sequencereverseslow = [[0,0,0,1],[0,0,1,1],[0,0,1,0],[0,1,1,0],[0,1,0,0],[1,1,0,0],[1,0,0,0],[1,0,0,1]]
+sequenceslow = [[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,1,1,0],[0,0,1,0],[0,0,1,1],[0,0,0,1],[1,0,0,1]] # Motor Sequence half step
+sequencereverseslow = [[0,0,0,1],[0,0,1,1],[0,0,1,0],[0,1,1,0],[0,1,0,0],[1,1,0,0],[1,0,0,0],[1,0,0,1]] # Motor Sequence half step reverse
 
-reverse = Pin(18,Pin.IN)
-slow = Pin(34,Pin.IN)
-on = Pin(35,Pin.IN)
+#Definition der digitalen Eingänge zur Bestimmung der Schalterzustände
+reverse = Pin(18,Pin.IN)  # Digital Inputs, reverse für Änderung der Drehrichtung
+slow = Pin(34,Pin.IN)     # slow für den half step mode
+on = Pin(35,Pin.IN)       # on zum Ein-und Ausschalten
+
+ts = 0.001                # Sleep time, Zeit zwischen dem Wechsel der steps
 
 
-ts = 0.001
-
-def read():
+#Verarbeitung des Analogen Wertes vom Potentiometer
+def read():               # Analog read value 
     turn_value = turn.read()
-    sleep_value = ts * ((turn_value/4095)*9+1)
-    return sleep_value
+    sleep_value = ts * ((turn_value/4095)*9+1)   # Full range ist 4095, turn_value wird darauf normiert und mit 9 multipliziert
+    return sleep_value                           # zur Veränderung der Drehzahl des Motors, die sleep time kann von 0.01 zu 0.001 verändert werden
     
+#Loop für den Motorbetrieb
+while True:                        
+    if reverse.value() == 0 and slow.value() == 0 and on.value() == 1:   # Forwärtsbetrieb, Ohne halfstep, Eingeschaltet,
+        for step in sequence:                    # Für jeden Schritt in der jeweiligen Sequenz    
+            for i in range(len(pins)):           # wird der Zustand auf den jeweilig benötigten Pin geschaltet,
+                pins[i].value(step[i])           # dadurch wird ein Drehsinn erreicht, denn die sequenz ist in der Drehreihenfolge
+                sleep(read())                    # Sleep Value, Pause zwischen den Schritten
 
-while True:
-    if reverse.value() == 0 and slow.value() == 0 and on.value() == 1:
-        for step in sequence:
-            for i in range(len(pins)):
-                pins[i].value(step[i])
-                sleep(read())
-    if reverse.value() == 0 and slow.value() == 1 and on.value() == 1:
+    if reverse.value() == 0 and slow.value() == 1 and on.value() == 1:   # Forwärtsbetrieb, halfstep, Eingeschaltet,
         for step in sequenceslow:
             for i in range(len(pins)):
                 pins[i].value(step[i])
                 sleep(read())
-    if reverse.value() == 1 and slow.value() == 0 and on.value() == 1:
+
+    if reverse.value() == 1 and slow.value() == 0 and on.value() == 1: # Rückwärtsbetrieb, Ohne halfstep, Eingeschaltet,
         for step in sequencereverse:
             for i in range(len(pins)):
                 pins[i].value(step[i])
                 sleep(read())
-    if reverse.value() == 1 and slow.value() == 1 and on.value() == 1:
+
+    if reverse.value() == 1 and slow.value() == 1 and on.value() == 1: # Rückwärtsbetrieb, halfstep, Eingeschaltet,
         for step in sequencereverseslow:
             for i in range(len(pins)):
                 pins[i].value(step[i])
                 sleep(read())
-    if on.value() == 0:
+
+    if on.value() == 0: # Motor ausgeschaltet
         sleep(ts)
 
         
